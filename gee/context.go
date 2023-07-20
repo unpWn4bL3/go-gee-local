@@ -9,12 +9,18 @@ import (
 type H map[string]any
 
 type Context struct {
-	Writer     http.ResponseWriter
-	Req        *http.Request
-	Path       string
-	Method     string
-	Params     map[string]string
+	//orig object
+	Writer http.ResponseWriter
+	Req    *http.Request
+	//req info
+	Path   string
+	Method string
+	Params map[string]string
+	//response info
 	StatusCode int
+	//middleware
+	handlers []HandlerFunc
+	index    int
 }
 
 func (c *Context) Param(key string) string {
@@ -28,6 +34,15 @@ func newContext(w http.ResponseWriter, req *http.Request) *Context {
 		Req:    req,
 		Path:   req.URL.Path,
 		Method: req.Method,
+		index:  -1,
+	}
+}
+
+func (c *Context) Next() {
+	c.index++
+	s := len(c.handlers)
+	for ; c.index < s; c.index++ {
+		c.handlers[c.index](c)
 	}
 }
 
@@ -42,6 +57,7 @@ func (c *Context) Query(key string) string {
 func (c *Context) Status(code int) {
 	c.StatusCode = code
 	c.Writer.WriteHeader(code)
+	c.Writer.Write([]byte{})
 }
 
 func (c *Context) SetHeader(key string, value string) {
@@ -72,4 +88,9 @@ func (c *Context) HTML(code int, html string) {
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
 	c.Writer.Write([]byte(html))
+}
+
+func (c *Context) Fail(code int, err string) {
+	c.Status(code)
+	c.Writer.Write([]byte(err))
 }
