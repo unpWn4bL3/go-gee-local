@@ -1,3 +1,25 @@
+// package main
+
+// import (
+// 	"net/http"
+
+// 	"gee"
+// )
+
+// func main() {
+// 	r := gee.Default()
+// 	r.GET("/", func(c *gee.Context) {
+// 		c.String(http.StatusOK, "Hello Geektutu\n")
+// 	})
+// 	// index out of range for testing Recovery()
+// 	r.GET("/panic", func(c *gee.Context) {
+// 		names := []string{"geektutu"}
+// 		c.String(http.StatusOK, names[100])
+// 	})
+
+// 	r.Run(":9999")
+// }
+
 package main
 
 import (
@@ -21,6 +43,7 @@ func FormatAsDate(t time.Time) string {
 
 func main() {
 	r := gee.New()
+	r.Use(gee.Recovery())
 	r.Use(gee.Logger())
 	r.SetFuncMap(template.FuncMap{
 		"FormatAsDate": FormatAsDate,
@@ -46,7 +69,10 @@ func main() {
 			"now":   time.Date(2019, 8, 17, 0, 0, 0, 0, time.UTC),
 		})
 	})
-
+	r.GET("/panic", func(c *gee.Context) {
+		names := []string{"geektutu"}
+		c.String(http.StatusOK, names[100])
+	})
 	r.Run(":9999")
 }
 
